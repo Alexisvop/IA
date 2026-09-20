@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxonomía de Agentes Inteligentes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { background-color: #1e293b; border-radius: 0.5rem; border: 2px solid #334155; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .log-entry { margin-bottom: 0.25rem; border-bottom: 1px solid #334155; padding-bottom: 0.25rem; }
+        .q-cell { transition: background-color 0.3s; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar Navegación -->
+    <aside class="w-full md:w-64 bg-slate-800 flex flex-col shadow-xl z-10 shrink-0 border-r border-slate-700">
+        <div class="p-4 border-b border-slate-700">
+            <h1 class="text-xl font-bold text-blue-400">Lab IA</h1>
+            <p class="text-xs text-slate-400">Taxonomía de Agentes</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-2">
+            <button onclick="app.selectAgent(0)" id="btn-agent-0" class="w-full text-left px-4 py-3 hover:bg-slate-700 transition-colors bg-slate-700 border-l-4 border-blue-500">1. Reflejo Simple</button>
+            <button onclick="app.selectAgent(1)" id="btn-agent-1" class="w-full text-left px-4 py-3 hover:bg-slate-700 transition-colors border-l-4 border-transparent">2. Basado en Modelos</button>
+            <button onclick="app.selectAgent(2)" id="btn-agent-2" class="w-full text-left px-4 py-3 hover:bg-slate-700 transition-colors border-l-4 border-transparent">3. Logro de Meta</button>
+            <button onclick="app.selectAgent(3)" id="btn-agent-3" class="w-full text-left px-4 py-3 hover:bg-slate-700 transition-colors border-l-4 border-transparent">4. Basado en Utilidad</button>
+            <button onclick="app.selectAgent(4)" id="btn-agent-4" class="w-full text-left px-4 py-3 hover:bg-slate-700 transition-colors border-l-4 border-transparent">5. Que Aprende</button>
+        </nav>
+        <div class="p-4 border-t border-slate-700 flex gap-2">
+            <button onclick="app.togglePause()" id="btn-pause" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded font-semibold transition">Pausar</button>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <!-- Panel Teórico -->
+        <header class="bg-slate-800 p-4 border-b border-slate-700 shrink-0">
+            <h2 id="theory-title" class="text-2xl font-bold text-blue-300">1. Agente de Reflejo Simple</h2>
+            <p id="theory-desc" class="text-sm text-slate-300 mt-2">Toma decisiones basándose únicamente en la percepción actual, sin memoria.</p>
+        </header>
+
+        <div class="flex-1 flex flex-col lg:flex-row overflow-hidden p-4 gap-4">
+            <!-- Simulador Visual -->
+            <section class="flex-1 flex flex-col items-center justify-center bg-slate-900 rounded-lg relative">
+                <!-- Controles interactivos superpuestos (dependen del agente) -->
+                <div id="sim-controls" class="absolute top-2 right-2 bg-slate-800/80 p-2 rounded border border-slate-600 hidden z-20">
+                    <!-- Dinámico -->
+                </div>
+                
+                <canvas id="sim-canvas" width="600" height="400" class="max-w-full max-h-full object-contain shadow-2xl"></canvas>
+            </section>
+
+            <!-- Consola de Telemetría -->
+            <aside class="w-full lg:w-80 bg-slate-800 rounded-lg border border-slate-700 flex flex-col shrink-0 overflow-hidden">
+                <div class="p-3 bg-slate-700 border-b border-slate-600 font-bold flex justify-between items-center">
+                    <span>Telemetría</span>
+                    <span class="flex h-3 w-3 relative">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                </div>
+                
+                <!-- Monitor de Variables Internas -->
+                <div id="telemetry-state" class="p-3 border-b border-slate-700 text-xs font-mono bg-slate-900 text-green-400 min-h-[120px]">
+                    <!-- Estado interno dinámico -->
+                </div>
+
+                <!-- Log de Decisiones -->
+                <div class="flex-1 p-3 overflow-y-auto text-xs font-mono" id="telemetry-log">
+                    <!-- Logs dinámicos -->
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        // Utilidades
+        const drawCircle = (ctx, x, y, r, color) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); ctx.closePath(); };
+        const drawRect = (ctx, x, y, w, h, color) => { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); };
+        
+        class Logger {
+            constructor(elId) { this.el = document.getElementById(elId); this.logs = []; }
+            log(msg, type='info') {
+                const colors = { info: 'text-slate-300', action: 'text-blue-400', alert: 'text-amber-400', error: 'text-red-400', success: 'text-green-400' };
+                this.logs.unshift(`<div class="log-entry ${colors[type]}">[${new Date().toLocaleTimeString().split(' ')[0]}] ${msg}</div>`);
+                if(this.logs.length > 50) this.logs.pop();
+                this.el.innerHTML = this.logs.join('');
+            }
+            clear() { this.logs = []; this.el.innerHTML = ''; }
+        }
+
+        // Estructura Base de Agente
+        class AgentSim {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.logger = new Logger('telemetry-log');
+                this.stateMonitor = document.getElementById('telemetry-state');
+                this.controls = document.getElementById('sim-controls');
+                this.active = false;
+            }
+            init() { this.logger.clear(); this.stateMonitor.innerHTML = ''; this.controls.innerHTML = ''; this.controls.classList.add('hidden'); }
+            update(dt) {}
+            draw() { this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); }
+            updateTelemetry() {}
+            onClick(x, y) {}
+            cleanup() {}
+        }
+
+        // ==========================================
+        // 1. Reflejo Simple: Brazo Clasificador
+        // ==========================================
+        class SimpleReflexAgent extends AgentSim {
+            init() {
+                super.init();
+                this.items = [];
+                this.armPos = 300;
+                this.armTarget = 300;
+                this.spawnTimer = 0;
+                this.logger.log('Sistema inicializado. Sin memoria.', 'info');
+                this.currentSensor = null;
+                this.currentAction = 'Reposo';
+            }
+            update(dt) {
+                this.spawnTimer -= dt;
+                if (this.spawnTimer <= 0) {
+                    const types = [{m: 'Metal', c: '#94a3b8'}, {m: 'Plástico', c: '#ef4444'}, {m: 'Vidrio', c: '#38bdf8'}];
+                    const t = types[Math.floor(Math.random() * types.length)];
+                    this.items.push({ x: 0, y: 250, type: t.m, color: t.c });
+                    this.spawnTimer = 2000;
+                }
+
+                // Mover items
+                for (let i = this.items.length - 1; i >= 0; i--) {
+                    let item = this.items[i];
+                    item.x += 100 * (dt / 1000); // velocidad 100px/s
+                    
+                    // Zona de sensor (x: 280 a 320)
+                    if (item.x > 280 && item.x < 320) {
+                        this.currentSensor = item.type;
+                        // LOGICA DE REFLEJO SIMPLE
+                        if (item.type === 'Metal') {
+                            this.currentAction = 'Electroimán Derecha';
+                            this.armTarget = 450;
+                            if(item.x > 300) item.y -= 150 * (dt/1000); // Subir
+                        } else if (item.type === 'Plástico') {
+                            this.currentAction = 'Soplador Izquierda';
+                            this.armTarget = 150;
+                            if(item.x > 300) item.y += 150 * (dt/1000); // Bajar
+                        } else {
+                            this.currentAction = 'Dejar pasar (Vidrio)';
+                            this.armTarget = 300;
+                        }
+                    } else if (item.x >= 320 && item.x < 350) {
+                        if (this.currentSensor) {
+                            this.logger.log(`Percibido: ${this.currentSensor} -> Acción: ${this.currentAction}`, 'action');
+                            this.currentSensor = null;
+                        }
+                    }
+
+                    if (item.x > 650 || item.y < 0 || item.y > 400) this.items.splice(i, 1);
+                }
+
+                // Mover brazo visual
+                this.armPos += (this.armTarget - this.armPos) * 10 * (dt / 1000);
+            }
+            draw() {
+                super.draw();
+                // Banda transportadora
+                drawRect(this.ctx, 0, 260, 600, 20, '#475569');
+                // Sensor visual
+                drawRect(this.ctx, 290, 200, 20, 60, '#fbbf24');
+                // Tolvas
+                drawRect(this.ctx, 400, 50, 100, 50, '#94a3b8'); // Arriba derecha (Metal)
+                drawRect(this.ctx, 100, 350, 100, 50, '#ef4444'); // Abajo izq (Plastico)
+
+                // Items
+                this.items.forEach(item => {
+                    drawCircle(this.ctx, item.x, item.y, 15, item.color);
+                });
+
+                // Brazo
+                drawRect(this.ctx, 295, 0, 10, 200, '#64748b');
+                drawCircle(this.ctx, this.armPos, 200, 20, '#cbd5e1');
+            }
+            updateTelemetry() {
+                this.stateMonitor.innerHTML = `
+                    <div class="mb-2"><strong>SENSOR ACTUAL:</strong> ${this.currentSensor || 'Ninguno'}</div>
+                    <div class="mb-2"><strong>REGLA ACTIVA:</strong><br>
+                    if (sensor == Metal) -> Imán<br>
+                    else if (sensor == Plástico) -> Soplador<br>
+                    else -> Ignorar</div>
+                    <div><strong>MEMORIA:</strong> [Vacía / No implementada]</div>
+                `;
+            }
+        }
+
+        // ==========================================
+        // 2. Basado en Modelos: Submarino Mapeo
+        // ==========================================
+        class ModelBasedAgent extends AgentSim {
+            init() {
+                super.init();
+                this.gridSize = 20; // 20x20
+                this.cellSize = 600 / this.gridSize; // 30px
+                this.sub = { x: 10, y: 10 };
+                this.internalMap = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill('unknown'));
+                this.worldMap = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill('empty'));
+                
+                // Generar obstáculos en el mundo
+                for(let i=0; i<40; i++) {
+                    this.worldMap[Math.floor(Math.random()*this.gridSize)][Math.floor(Math.random()*this.gridSize)] = 'rock';
+                }
+                this.worldMap[this.sub.y][this.sub.x] = 'empty';
+                this.moveTimer = 0;
+                this.logger.log('Iniciando inmersión. Memoria topográfica activa.', 'info');
+            }
+            update(dt) {
+                this.moveTimer -= dt;
+                if(this.moveTimer <= 0) {
+                    this.moveTimer = 200; // 5 pasos por seg
+                    this.perceiveAndUpdateModel();
+                    this.decideAndMove();
+                }
+            }
+            perceiveAndUpdateModel() {
+                // Percibe 1 casilla alrededor
+                for(let dy=-1; dy<=1; dy++) {
+                    for(let dx=-1; dx<=1; dx++) {
+                        let nx = this.sub.x + dx, ny = this.sub.y + dy;
+                        if(nx>=0 && nx<this.gridSize && ny>=0 && ny<this.gridSize) {
+                            if(this.internalMap[ny][nx] === 'unknown') {
+                                this.internalMap[ny][nx] = this.worldMap[ny][nx];
+                                if(dx===0 && dy===0) this.internalMap[ny][nx] = 'visited';
+                            }
+                        }
+                    }
+                }
+                this.internalMap[this.sub.y][this.sub.x] = 'visited';
+            }
+            decideAndMove() {
+                // BFS para encontrar la casilla 'unknown' más cercana accesible
+                let queue = [{x: this.sub.x, y: this.sub.y, path: []}];
+                let visitedBFS = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(false));
+                visitedBFS[this.sub.y][this.sub.x] = true;
+                let targetPath = null;
+
+                const dirs = [{x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}]; // Arriba, Derecha, Abajo, Izquierda
+
+                while(queue.length > 0) {
+                    let curr = queue.shift();
+                    
+                    // Si encuentra un borde de lo desconocido
+                    for(let d of dirs) {
+                        let nx = curr.x + d.x, ny = curr.y + d.y;
+                        if(nx>=0 && nx<this.gridSize && ny>=0 && ny<this.gridSize) {
+                            if(this.internalMap[ny][nx] === 'unknown') {
+                                targetPath = curr.path.concat({x: nx, y: ny});
+                                queue = []; break;
+                            }
+                        }
+                    }
+                    if(targetPath) break;
+
+                    for(let d of dirs) {
+                        let nx = curr.x + d.x, ny = curr.y + d.y;
+                        if(nx>=0 && nx<this.gridSize && ny>=0 && ny<this.gridSize && !visitedBFS[ny][nx]) {
+                            // Solo navegar por lo conocido y no bloqueado
+                            if(this.internalMap[ny][nx] === 'empty' || this.internalMap[ny][nx] === 'visited') {
+                                visitedBFS[ny][nx] = true;
+                                queue.push({x: nx, y: ny, path: curr.path.concat({x: nx, y: ny})});
+                            }
+                        }
+                    }
+                }
+
+                if(targetPath && targetPath.length > 0) {
+                    let nextStep = targetPath[0];
+                    if(this.internalMap[nextStep.y][nextStep.x] !== 'rock') {
+                        this.sub.x = nextStep.x;
+                        this.sub.y = nextStep.y;
+                    }
+                } else {
+                    this.logger.log('Mapeo completado o bloqueado.', 'success');
+                }
+            }
+            draw() {
+                super.draw();
+                // Dibujar Mundo vs Modelo Interno
+                for(let y=0; y<this.gridSize; y++) {
+                    for(let x=0; x<this.gridSize; x++) {
+                        let state = this.internalMap[y][x];
+                        let px = x * this.cellSize;
+                        let py = y * this.cellSize;
+                        
+                        if(state === 'unknown') drawRect(this.ctx, px, py, this.cellSize, this.cellSize, '#0f172a'); // Niebla
+                        else if(state === 'rock') drawRect(this.ctx, px, py, this.cellSize, this.cellSize, '#475569'); // Roca
+                        else if(state === 'visited') drawRect(this.ctx, px, py, this.cellSize, this.cellSize, '#1e3a8a'); // Visitado
+                        else drawRect(this.ctx, px, py, this.cellSize, this.cellSize, '#2563eb'); // Conocido vacío
+                        
+                        this.ctx.strokeStyle = '#334155';
+                        this.ctx.strokeRect(px, py, this.cellSize, this.cellSize);
+                    }
+                }
+                // Submarino
+                drawCircle(this.ctx, this.sub.x * this.cellSize + this.cellSize/2, this.sub.y * this.cellSize + this.cellSize/2, this.cellSize/2.5, '#fbbf24');
+                // Sensor ring
+                this.ctx.beginPath();
+                this.ctx.arc(this.sub.x * this.cellSize + this.cellSize/2, this.sub.y * this.cellSize + this.cellSize/2, this.cellSize * 1.5, 0, Math.PI*2);
+                this.ctx.strokeStyle = 'rgba(251, 191, 36, 0.3)';
+                this.ctx.stroke();
+            }
+            updateTelemetry() {
+                let mapped = 0;
+                for(let y=0; y<this.gridSize; y++)
+                    for(let x=0; x<this.gridSize; x++)
+                        if(this.internalMap[y][x] !== 'unknown') mapped++;
+                
+                let p = Math.round((mapped / (this.gridSize*this.gridSize)) * 100);
+                this.stateMonitor.innerHTML = `
+                    <div class="mb-2"><strong>ESTADO INTERNO (MEMORIA):</strong></div>
+                    <div>Matriz Topográfica: 20x20</div>
+                    <div>Explorado: ${p}%</div>
+                    <div class="mt-2"><strong>RAZONAMIENTO:</strong><br>1. Actualiza matriz con sensores<br>2. Cruza datos históricos<br>3. Busca frontera desconocida más cercana.</div>
+                `;
+            }
+        }
+
+        // ==========================================
+        // 3. Logro de Meta: Robot Rescatista (A*)
+        // ==========================================
+        class GoalBasedAgent extends AgentSim {
+            init() {
+                super.init();
+                this.gridSize = 15;
+                this.cs = 600 / this.gridSize;
+                this.robot = {x: 1, y: 1};
+                this.goal = null;
+                this.map = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(0));
+                
+                // Obstáculos / Fuego (1 = fuego)
+                for(let i=0; i<30; i++) {
+                    this.map[Math.floor(Math.random()*this.gridSize)][Math.floor(Math.random()*this.gridSize)] = 1;
+                }
+                this.map[this.robot.y][this.robot.x] = 0;
+                
+                this.path = [];
+                this.evaluatedNodes = [];
+                this.moveTimer = 0;
+                this.state = 'IDLE'; // IDLE, SEARCHING, MOVING
+                
+                this.logger.log('Haz clic en el mapa para situar a un civil herido (Meta).', 'info');
+                
+                this.controls.classList.remove('hidden');
+                this.controls.innerHTML = `<p class="text-sm">Click para establecer meta</p>`;
+            }
+            onClick(x, y) {
+                if(this.state === 'MOVING') return; // Bloquear si se mueve
+                let gx = Math.floor(x / this.cs);
+                let gy = Math.floor(y / this.cs);
+                if(gx>=0 && gx<this.gridSize && gy>=0 && gy<this.gridSize && this.map[gy][gx] === 0) {
+                    this.goal = {x: gx, y: gy};
+                    this.logger.log(`Nueva meta establecida: [${gx}, ${gy}]. Calculando ruta...`, 'alert');
+                    this.path = [];
+                    this.evaluatedNodes = [];
+                    this.state = 'SEARCHING';
+                    this.runAStar();
+                }
+            }
+            runAStar() {
+                // A* Algoritmo
+                const h = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+                let openSet = [{x: this.robot.x, y: this.robot.y, f: 0, g: 0, parent: null}];
+                let closedSet = [];
+                
+                let steps = 0;
+                
+                while(openSet.length > 0) {
+                    steps++;
+                    // Min F
+                    openSet.sort((a,b) => a.f - b.f);
+                    let curr = openSet.shift();
+                    this.evaluatedNodes.push(curr);
+                    closedSet.push(curr);
+                    
+                    if(curr.x === this.goal.x && curr.y === this.goal.y) {
+                        // Reconstruir
+                        let temp = curr;
+                        while(temp.parent) {
+                            this.path.unshift({x: temp.x, y: temp.y});
+                            temp = temp.parent;
+                        }
+                        this.logger.log(`Ruta encontrada tras evaluar ${steps} nodos. Moviendo...`, 'success');
+                        this.state = 'MOVING';
+                        return;
+                    }
+                    
+                    const dirs = [{x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}];
+                    for(let d of dirs) {
+                        let nx = curr.x + d.x, ny = curr.y + d.y;
+                        if(nx>=0 && nx<this.gridSize && ny>=0 && ny<this.gridSize && this.map[ny][nx] === 0) {
+                            if(closedSet.find(n => n.x===nx && n.y===ny)) continue;
+                            
+                            let tg = curr.g + 1;
+                            let neighbor = openSet.find(n => n.x===nx && n.y===ny);
+                            
+                            if(!neighbor) {
+                                neighbor = {x:nx, y:ny, parent: curr, g: tg, f: tg + h({x:nx,y:ny}, this.goal)};
+                                openSet.push(neighbor);
+                            } else if(tg < neighbor.g) {
+                                neighbor.g = tg;
+                                neighbor.parent = curr;
+                                neighbor.f = tg + h({x:nx,y:ny}, this.goal);
+                            }
+                        }
+                    }
+                }
+                this.logger.log('Imposible alcanzar la meta.', 'error');
+                this.state = 'IDLE';
+            }
+            update(dt) {
+                if(this.state === 'MOVING') {
+                    this.moveTimer -= dt;
+                    if(this.moveTimer <= 0 && this.path.length > 0) {
+                        let next = this.path.shift();
+                        this.robot.x = next.x;
+                        this.robot.y = next.y;
+                        this.moveTimer = 200;
+                        if(this.path.length === 0) {
+                            this.state = 'IDLE';
+                            this.goal = null;
+                            this.logger.log('Meta alcanzada. Civil rescatado.', 'success');
+                        }
+                    }
+                }
+            }
+            draw() {
+                super.draw();
+                // Grid
+                for(let y=0; y<this.gridSize; y++) {
+                    for(let x=0; x<this.gridSize; x++) {
+                        let px = x * this.cs, py = y * this.cs;
+                        if(this.map[y][x] === 1) drawRect(this.ctx, px, py, this.cs, this.cs, '#dc2626'); // Fuego
+                        else {
+                            drawRect(this.ctx, px, py, this.cs, this.cs, '#334155');
+                            this.ctx.strokeStyle = '#475569';
+                            this.ctx.strokeRect(px, py, this.cs, this.cs);
+                        }
+                    }
+                }
+                
+                // Evaluated A*
+                this.ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+                this.evaluatedNodes.forEach(n => {
+                    this.ctx.fillRect(n.x*this.cs, n.y*this.cs, this.cs, this.cs);
+                });
+                
+                // Path
+                this.ctx.fillStyle = 'rgba(74, 222, 128, 0.5)';
+                this.path.forEach(n => {
+                    this.ctx.fillRect(n.x*this.cs, n.y*this.cs, this.cs, this.cs);
+                });
+                
+                // Goal
+                if(this.goal) {
+                    drawCircle(this.ctx, this.goal.x*this.cs + this.cs/2, this.goal.y*this.cs + this.cs/2, this.cs/3, '#22c55e');
+                }
+                
+                // Robot
+                drawCircle(this.ctx, this.robot.x*this.cs + this.cs/2, this.robot.y*this.cs + this.cs/2, this.cs/2.5, '#f8fafc');
+            }
+            updateTelemetry() {
+                this.stateMonitor.innerHTML = `
+                    <div class="mb-2"><strong>OBJETIVO ACTUAL:</strong> ${this.goal ? `[${this.goal.x}, ${this.goal.y}]` : 'Ninguno'}</div>
+                    <div class="mb-2"><strong>ALGORITMO ACTIVO:</strong> A* (A-Star) Heurística Manhattan</div>
+                    <div><strong>NODOS EVALUADOS:</strong> ${this.evaluatedNodes.length}</div>
+                    <div><strong>COSTE A META:</strong> ${this.path.length} pasos</div>
+                `;
+            }
+        }
+
+        // ==========================================
+        // 4. Basado en Utilidad: Load Balancer
+        // ==========================================
+        class UtilityBasedAgent extends AgentSim {
+            init() {
+                super.init();
+                this.servers = [
+                    { id: 'S1 (Ultra)', cap: 100, cost: 50, load: 0, x: 450, y: 100 },
+                    { id: 'S2 (Normal)', cap: 50, cost: 20, load: 0, x: 450, y: 200 },
+                    { id: 'S3 (Eco)', cap: 20, cost: 5, load: 0, x: 450, y: 300 }
+                ];
+                this.packets = [];
+                this.spawnTimer = 0;
+                
+                // Parámetros de Utilidad definidos por usuario
+                this.weightPerf = 0.5; 
+                this.weightCost = 0.5;
+
+                this.controls.classList.remove('hidden');
+                this.controls.innerHTML = `
+                    <label class="block text-xs font-bold mb-1 text-slate-300">Preferencia del Negocio</label>
+                    <input type="range" id="util-slider" min="0" max="100" value="50" class="w-40 accent-blue-500">
+                    <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                        <span>Ahorro</span><span>Rendimiento</span>
+                    </div>
+                `;
+                
+                document.getElementById('util-slider').addEventListener('input', (e) => {
+                    this.weightPerf = e.target.value / 100;
+                    this.weightCost = 1 - this.weightPerf;
+                    this.logger.log(`Preferencias actualizadas: W_Perf=${this.weightPerf.toFixed(2)}, W_Cost=${this.weightCost.toFixed(2)}`, 'action');
+                });
+            }
+            
+            calculateUtility(server) {
+                // Utilidad = Beneficio (Capacidad libre) * W_Perf - Costo (Gasto operativo) * W_Cost
+                let freeCap = server.cap - server.load;
+                // Normalizamos (asumiendo cap max 100, cost max 50)
+                let normPerf = freeCap / 100; 
+                let normCost = server.cost / 50;
+                
+                return (normPerf * this.weightPerf) - (normCost * this.weightCost);
+            }
+
+            update(dt) {
+                // Reducir carga de servidores con el tiempo
+                this.servers.forEach(s => { if(s.load > 0) s.load -= 10 * (dt/1000); if(s.load<0) s.load=0; });
+
+                this.spawnTimer -= dt;
+                if(this.spawnTimer <= 0) {
+                    this.spawnTimer = 500; // 2 paquetes por seg
+                    
+                    // Lógica del Agente Basado en Utilidad
+                    let bestServer = null;
+                    let maxU = -Infinity;
+                    
+                    this.servers.forEach(s => {
+                        let u = this.calculateUtility(s);
+                        s.currentU = u; // Para visualización
+                        if(u > maxU) { maxU = u; bestServer = s; }
+                    });
+                    
+                    if(bestServer) {
+                        bestServer.load += 15;
+                        this.packets.push({x: 50, y: 200, tx: bestServer.x, ty: bestServer.y, color: '#3b82f6'});
+                        this.logger.log(`Paquete rutado a ${bestServer.id} (Utilidad: ${maxU.toFixed(2)})`);
+                    }
+                }
+
+                // Mover paquetes visualmente
+                for(let i = this.packets.length-1; i>=0; i--) {
+                    let p = this.packets[i];
+                    p.x += (p.tx - p.x) * 5 * (dt/1000);
+                    p.y += (p.ty - p.y) * 5 * (dt/1000);
+                    if(Math.abs(p.x - p.tx) < 5) this.packets.splice(i, 1);
+                }
+            }
+            draw() {
+                super.draw();
+                // Origen
+                drawCircle(this.ctx, 50, 200, 30, '#10b981');
+                this.ctx.fillStyle = '#fff'; this.ctx.font="12px sans-serif"; this.ctx.fillText("Internet", 30, 245);
+                
+                // Conexiones
+                this.ctx.strokeStyle = '#334155';
+                this.ctx.lineWidth = 2;
+                this.servers.forEach(s => {
+                    this.ctx.beginPath(); this.ctx.moveTo(50, 200); this.ctx.lineTo(s.x, s.y); this.ctx.stroke();
+                });
+
+                // Servidores
+                this.servers.forEach(s => {
+                    drawRect(this.ctx, s.x-20, s.y-20, 40, 40, '#64748b');
+                    // Barra de carga
+                    drawRect(this.ctx, s.x-20, s.y-25, 40, 4, '#334155');
+                    drawRect(this.ctx, s.x-20, s.y-25, 40 * (s.load/s.cap), 4, s.load > s.cap*0.8 ? '#ef4444' : '#10b981');
+                    
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.fillText(s.id, s.x+30, s.y-5);
+                    this.ctx.fillStyle = '#94a3b8';
+                    this.ctx.fillText(`U: ${s.currentU?.toFixed(2) || 0}`, s.x+30, s.y+10);
+                });
+
+                // Paquetes
+                this.packets.forEach(p => drawCircle(this.ctx, p.x, p.y, 5, p.color));
+            }
+            updateTelemetry() {
+                this.stateMonitor.innerHTML = `
+                    <div class="mb-2"><strong>FUNCIÓN DE UTILIDAD:</strong><br>
+                    U = (EspacioLibre * W_Perf) - (Costo * W_Cost)</div>
+                    <div class="mb-2"><strong>PESOS (Ponderación):</strong><br>
+                    W_Rendimiento: ${this.weightPerf.toFixed(2)}<br>
+                    W_Costo: ${this.weightCost.toFixed(2)}</div>
+                    <div>Evalúa todos los estados futuros posibles y elige el que maximiza 'U'.</div>
+                `;
+            }
+        }
+
+        // ==========================================
+        // 5. Que Aprende: Suspensión Adaptativa (Q-Learning)
+        // ==========================================
+        class LearningAgent extends AgentSim {
+            init() {
+                super.init();
+                // Q-Table real: Estado (Tipo de bache) x Acción (Dureza suspensión)
+                this.states = ['Suave', 'Medio', 'Grave'];
+                this.actions = ['Blanda', 'Normal', 'Dura'];
+                
+                // Inicializar Q-Table en 0
+                this.qTable = {};
+                this.states.forEach(s => {
+                    this.qTable[s] = {};
+                    this.actions.forEach(a => this.qTable[s][a] = 0);
+                });
+                
+                this.alpha = 0.5; // Tasa de aprendizaje
+                this.gamma = 0.8; // Factor de descuento (simplificado para MDP simple)
+                this.epsilon = 0.3; // Exploración (30% random)
+
+                this.carX = 100;
+                this.bumps = [];
+                this.spawnTimer = 0;
+                
+                this.lastState = null;
+                this.lastAction = null;
+                this.feedbackWindow = 0; // Tiempo para recibir castigo
+                
+                this.controls.classList.remove('hidden');
+                this.controls.innerHTML = `
+                    <button id="btn-punish" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded w-full shadow-lg border border-red-800">
+                        ¡Bache Incómodo! (Castigar -10)
+                    </button>
+                    <p class="text-[10px] text-center mt-1 text-slate-300">Click justo al pasar si bota mal.</p>
+                `;
+                
+                document.getElementById('btn-punish').addEventListener('mousedown', () => {
+                    this.applyReward(-10);
+                    // Visual effect
+                    document.getElementById('sim-canvas').style.transform = 'translateY(5px)';
+                    setTimeout(()=>document.getElementById('sim-canvas').style.transform = 'translateY(0)', 100);
+                });
+                
+                this.logger.log('Q-Learning inicializado. Tabla en 0. Entrena al agente castigándolo.', 'info');
+            }
+            
+            applyReward(reward) {
+                if(this.lastState && this.lastAction) {
+                    let oldQ = this.qTable[this.lastState][this.lastAction];
+                    // Formula Q-Learning simplificada (no hay estado futuro inmediato claro, es episódico)
+                    // Q(s,a) = Q(s,a) + alpha * (R - Q(s,a))
+                    this.qTable[this.lastState][this.lastAction] = oldQ + this.alpha * (reward - oldQ);
+                    this.logger.log(`Aprendizaje: Estado '${this.lastState}', Acción '${this.lastAction}', Recompensa: ${reward}. Q_old: ${oldQ.toFixed(2)}, Q_new: ${this.qTable[this.lastState][this.lastAction].toFixed(2)}`, reward < 0 ? 'error' : 'success');
+                }
+            }
+
+            chooseAction(state) {
+                // Epsilon-Greedy
+                if (Math.random() < this.epsilon) {
+                    let act = this.actions[Math.floor(Math.random() * this.actions.length)];
+                    this.logger.log(`Exploración (Random): Eligió '${act}' para bache '${state}'`);
+                    return act;
+                } else {
+                    let bestAction = this.actions[0];
+                    let maxQ = -Infinity;
+                    for(let a of this.actions) {
+                        if(this.qTable[state][a] > maxQ) {
+                            maxQ = this.qTable[state][a];
+                            bestAction = a;
+                        }
+                    }
+                    this.logger.log(`Explotación (Q-Table): Eligió '${bestAction}' para bache '${state}'`);
+                    return bestAction;
+                }
+            }
+
+            update(dt) {
+                this.spawnTimer -= dt;
+                this.feedbackWindow -= dt;
+                
+                // Si pasa la ventana sin castigo, recompensa implícita positiva leve
+                if(this.feedbackWindow < 0 && this.feedbackWindow > -1000 && this.lastState) {
+                    this.applyReward(+2);
+                    this.lastState = null; // reset
+                }
+
+                if(this.spawnTimer <= 0) {
+                    this.spawnTimer = 3000;
+                    let type = this.states[Math.floor(Math.random() * this.states.length)];
+                    this.bumps.push({x: 650, type: type, passed: false});
+                }
+
+                this.bumps.forEach(b => {
+                    b.x -= 200 * (dt/1000);
+                    
+                    // Sensor: El agente detecta el bache 200px antes
+                    if(b.x > 150 && b.x < 160 && !b.passed) {
+                        b.passed = true;
+                        this.lastState = b.type;
+                        this.lastAction = this.chooseAction(b.type);
+                        this.feedbackWindow = 1000; // 1 seg para recibir castigo
+                    }
+                });
+                
+                // Clean
+                this.bumps = this.bumps.filter(b => b.x > -50);
+            }
+
+            draw() {
+                super.draw();
+                // Suelo
+                drawRect(this.ctx, 0, 300, 600, 100, '#334155');
+                
+                // Baches
+                this.bumps.forEach(b => {
+                    let w = 20, h = 10, c = '#fff';
+                    if(b.type === 'Suave') { w=30; h=5; c='#64748b'; }
+                    if(b.type === 'Medio') { w=40; h=15; c='#94a3b8'; }
+                    if(b.type === 'Grave') { w=50; h=25; c='#cbd5e1'; }
+                    drawRect(this.ctx, b.x, 300 - h, w, h, c);
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.fillText(b.type, b.x, 325);
+                });
+
+                // Coche
+                drawRect(this.ctx, this.carX, 260, 80, 30, '#ef4444');
+                // Ruedas y suspensión (visualmente cambia según la acción actual)
+                let susColor = '#10b981'; // Normal
+                if(this.lastAction === 'Blanda') susColor = '#60a5fa';
+                if(this.lastAction === 'Dura') susColor = '#f59e0b';
+                
+                this.ctx.lineWidth = 4;
+                this.ctx.strokeStyle = susColor;
+                
+                // Suspensión izq
+                this.ctx.beginPath(); this.ctx.moveTo(this.carX+15, 290); this.ctx.lineTo(this.carX+15, 305); this.ctx.stroke();
+                // Suspensión der
+                this.ctx.beginPath(); this.ctx.moveTo(this.carX+65, 290); this.ctx.lineTo(this.carX+65, 305); this.ctx.stroke();
+                
+                drawCircle(this.ctx, this.carX+15, 305, 10, '#1e293b');
+                drawCircle(this.ctx, this.carX+65, 305, 10, '#1e293b');
+                
+                // Info HUD
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillText(`Suspensión Actual: ${this.lastAction || 'Ninguna'}`, 10, 20);
+            }
+            
+            updateTelemetry() {
+                // Renderizar Q-Table en HTML
+                let tableHTML = `<table class="w-full text-center mt-2 border-collapse">
+                    <thead><tr class="border-b border-slate-600 text-slate-400">
+                    <th class="p-1">Estado/Acción</th><th>Blanda</th><th>Normal</th><th>Dura</th>
+                    </tr></thead><tbody>`;
+                
+                this.states.forEach(s => {
+                    tableHTML += `<tr class="border-b border-slate-700"><td class="text-left font-bold text-slate-300 p-1">${s}</td>`;
+                    this.actions.forEach(a => {
+                        let q = this.qTable[s][a];
+                        let colorClass = '';
+                        if(q > 1) colorClass = 'bg-green-900/50 text-green-300';
+                        if(q < -1) colorClass = 'bg-red-900/50 text-red-300';
+                        tableHTML += `<td class="${colorClass} p-1 rounded q-cell transition-all">${q.toFixed(1)}</td>`;
+                    });
+                    tableHTML += `</tr>`;
+                });
+                tableHTML += `</tbody></table>`;
+
+                this.stateMonitor.innerHTML = `
+                    <div class="mb-1"><strong>Q-TABLE (Matriz de Aprendizaje):</strong></div>
+                    <div class="text-[10px] text-slate-400">Actualizado vía Ecuación de Bellman (Simplif.)</div>
+                    ${tableHTML}
+                `;
+            }
+        }
+
+        // ==========================================
+        // Motor Principal (App)
+        // ==========================================
+        const theories = [
+            { t: "1. Agente de Reflejo Simple", d: "Toma decisiones basándose únicamente en la percepción actual. No tiene memoria del pasado. Utiliza reglas de condición-acción." },
+            { t: "2. Agente Basado en Modelos", d: "Mantiene un estado interno que representa lo que sabe del mundo no observable. Toma decisiones cruzando sensores actuales con su memoria histórica." },
+            { t: "3. Agente Basado en Logro de Meta", d: "Combina el modelo del mundo con información sobre objetivos. Evalúa múltiples secuencias de acciones futuras (búsqueda algorítmica) antes de actuar." },
+            { t: "4. Agente Basado en Utilidad", d: "Cuando existen múltiples estados meta o múltiples caminos, usa una función de utilidad matemática para elegir el camino más 'feliz', eficiente o rentable." },
+            { t: "5. Agente Que Aprende", d: "Inicialmente no sabe cómo actuar correctamente. Experimenta, recibe recompensas/castigos y modifica sus estructuras internas (ej. Q-Table) para mejorar en el futuro." }
+        ];
+
+        const app = {
+            agents: [],
+            currentIdx: -1,
+            lastTime: 0,
+            paused: false,
+            
+            init() {
+                this.agents = [
+                    new SimpleReflexAgent('sim-canvas'),
+                    new ModelBasedAgent('sim-canvas'),
+                    new GoalBasedAgent('sim-canvas'),
+                    new UtilityBasedAgent('sim-canvas'),
+                    new LearningAgent('sim-canvas')
+                ];
+                
+                document.getElementById('sim-canvas').addEventListener('mousedown', (e) => {
+                    const rect = e.target.getBoundingClientRect();
+                    const scaleX = e.target.width / rect.width;
+                    const scaleY = e.target.height / rect.height;
+                    this.agents[this.currentIdx].onClick((e.clientX - rect.left)*scaleX, (e.clientY - rect.top)*scaleY);
+                });
+
+                this.selectAgent(0);
+                requestAnimationFrame(t => this.loop(t));
+            },
+            
+            selectAgent(idx) {
+                if(this.currentIdx === idx) return;
+                
+                if(this.currentIdx >= 0) this.agents[this.currentIdx].active = false;
+                
+                // Actualizar UI Botones
+                for(let i=0; i<5; i++) {
+                    const btn = document.getElementById(`btn-agent-${i}`);
+                    if(i===idx) {
+                        btn.classList.add('bg-slate-700', 'border-blue-500');
+                        btn.classList.remove('border-transparent');
+                    } else {
+                        btn.classList.remove('bg-slate-700', 'border-blue-500');
+                        btn.classList.add('border-transparent');
+                    }
+                }
+                
+                // Actualizar Teoría
+                document.getElementById('theory-title').innerText = theories[idx].t;
+                document.getElementById('theory-desc').innerText = theories[idx].d;
+                
+                this.currentIdx = idx;
+                const agent = this.agents[idx];
+                agent.active = true;
+                agent.init();
+                agent.updateTelemetry();
+            },
+            
+            togglePause() {
+                this.paused = !this.paused;
+                const btn = document.getElementById('btn-pause');
+                btn.innerText = this.paused ? "Reanudar" : "Pausar";
+                btn.classList.toggle('bg-amber-600');
+                btn.classList.toggle('bg-green-600');
+            },
+
+            loop(time) {
+                const dt = time - this.lastTime;
+                this.lastTime = time;
+                
+                if(!this.paused && this.currentIdx >= 0 && dt < 100) { // evitar saltos grandes si pierde foco
+                    const agent = this.agents[this.currentIdx];
+                    agent.update(dt);
+                    agent.draw();
+                    agent.updateTelemetry();
+                }
+                
+                requestAnimationFrame(t => this.loop(t));
+            }
+        };
+
+        // Iniciar al cargar
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>

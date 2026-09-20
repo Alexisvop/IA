@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxonomía de Agentes Inteligentes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            600: '#475569',
+                        },
+                        primary: '#3b82f6',
+                        accent: '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        /* Custom Scrollbar for logs */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="flex h-screen w-full">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-dark-800 border-r border-dark-700 flex flex-col z-20">
+            <div class="p-5 border-b border-dark-700 flex flex-col gap-3">
+                <div class="flex justify-between items-center px-1">
+                    <img src="https://www.unam.mx/sites/default/files/images/unam.svg" alt="UNAM" class="h-10 opacity-90 drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]">
+                    <img src="https://www.icat.unam.mx/congresoEstudiantil2025/imagenes/logo_icat.png" alt="ICAT" class="h-8 opacity-90 drop-shadow-[0_0_5px_rgba(255,255,255,0.2)] object-contain" onerror="this.outerHTML='<span class=\'text-[10px] font-bold text-white\'>ICAT</span>'">
+                </div>
+                <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent mt-1">
+                    <i class="fa-solid fa-microchip mr-2 text-primary"></i>AI Agents
+                </h1>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1 px-3">
+                    <li v-for="(agent, id) in agentsData" :key="id">
+                        <button 
+                            @click="currentAgentId = id"
+                            class="w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center"
+                            :class="currentAgentId === id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-dark-700 hover:text-slate-200'"
+                        >
+                            <i :class="agent.icon + ' w-6'"></i>
+                            <span class="text-sm font-medium">{{ agent.name }}</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 border-t border-dark-700 text-[10px] text-slate-500 text-center flex flex-col gap-1.5">
+                <span class="tracking-wide uppercase">Taxonomía Russell & Norvig</span>
+                <div class="w-full h-px bg-dark-700 my-0.5"></div>
+                <span class="text-slate-400 font-bold text-xs mt-0.5">Autor: Luis Ochoa Toledo</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-full bg-dark-900 relative min-w-0 overflow-hidden">
+            
+            <!-- Theory Panel (Top) -->
+            <header class="h-24 shrink-0 bg-dark-800/50 border-b border-dark-700 px-6 py-3 flex flex-col justify-center backdrop-blur-sm">
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                        <i :class="currentAgent.icon + ' text-white text-sm'"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-100">{{ currentAgent.name }}</h2>
+                </div>
+                <p class="text-slate-400 text-xs max-w-3xl ml-11 line-clamp-2">
+                    {{ currentAgent.description }}
+                </p>
+            </header>
+
+            <!-- Lab Panel (Middle - Interactive area) -->
+            <div class="flex-1 p-4 flex flex-row gap-4 min-h-0 overflow-hidden">
+                <!-- Example 1 -->
+                <div class="flex-1 bg-dark-800 rounded-2xl border border-dark-700 flex flex-col shadow-xl overflow-hidden min-w-0">
+                    <div class="bg-dark-700/50 p-3 border-b border-dark-700 shrink-0 flex justify-between items-center">
+                        <h3 class="font-semibold text-sm text-slate-200"><i class="fa-solid fa-flask mr-2 text-primary"></i>{{ currentAgent.examples[0].title }}</h3>
+                        <span class="text-[10px] bg-dark-900 text-slate-400 px-2 py-1 rounded-md">Interactivo</span>
+                    </div>
+                    <div class="flex-1 relative overflow-hidden p-2 flex flex-col items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')]">
+                        
+                        <!-- REFLEJO SIMPLE - TERMOSTATO -->
+                        <div v-if="currentAgentId === 'simple'" class="w-full h-full max-w-sm bg-dark-900 p-4 rounded-xl border border-dark-700 flex flex-col items-center justify-center">
+                            <div class="text-5xl mb-4 transition-colors duration-500" :class="thermostatColor">
+                                <i :class="thermostatIcon"></i>
+                            </div>
+                            <div class="text-2xl font-bold mb-1">{{ thermostatTemp }}°C</div>
+                            <div class="text-xs text-slate-400 mb-6">Estado: <span class="font-bold text-white">{{ thermostatState }}</span></div>
+                            
+                            <div class="w-full px-2 mt-auto">
+                                <input type="range" min="0" max="40" v-model="thermostatTemp" @input="updateThermostat" class="w-full accent-primary h-2 bg-dark-700 rounded-lg appearance-none cursor-pointer">
+                                <div class="flex justify-between text-xs text-slate-500 mt-2">
+                                    <span>0°C</span>
+                                    <span>20°C</span>
+                                    <span>40°C</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REFLEJO MODELO - ASPIRADORA -->
+                        <div v-else-if="currentAgentId === 'model'" class="w-full h-full flex flex-col items-center justify-center p-1">
+                            <div class="grid grid-cols-4 gap-1 mb-2">
+                                <div v-for="(tile, i) in vacuumGrid" :key="i" 
+                                    @click="dirtyTile(i)"
+                                    class="w-10 h-10 lg:w-12 lg:h-12 border-2 rounded flex items-center justify-center cursor-pointer transition-colors relative"
+                                    :class="tile.isDirty ? 'bg-yellow-900/50 border-yellow-700' : 'bg-dark-900 border-dark-700 hover:border-slate-500'">
+                                    <i v-if="tile.isDirty" class="fa-solid fa-poop text-yellow-600 text-sm"></i>
+                                    <div v-if="vacuumPos === i" class="absolute text-xl lg:text-2xl text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10">
+                                        <i class="fa-solid fa-robot"></i>
+                                    </div>
+                                    <!-- Memoria visual -->
+                                    <div v-if="vacuumMemory.includes(i) && vacuumPos !== i" class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-blue-500/50"></div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="startVacuum" class="px-3 py-1.5 text-sm bg-primary hover:bg-blue-600 text-white rounded-lg shadow-lg font-medium transition-colors">
+                                    <i class="fa-solid fa-play mr-1"></i> Iniciar
+                                </button>
+                                <button @click="resetVacuum" class="px-3 py-1.5 text-sm bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i> Reset
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-2 text-center leading-tight">Haz clic para ensuciar.<br>Puntos azules = memoria interna.</p>
+                        </div>
+
+                        <!-- METAS - LABERINTO -->
+                        <div v-else-if="currentAgentId === 'goal'" class="w-full h-full flex flex-col items-center justify-center p-1">
+                            <div class="grid grid-cols-5 gap-0.5 mb-2 border-2 border-dark-700 bg-dark-700 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                                <div v-for="(cell, i) in mazeGrid" :key="i" 
+                                    @click="moveMazeGoal(i)"
+                                    class="w-7 h-7 lg:w-9 lg:h-9 flex items-center justify-center transition-colors relative"
+                                    :class="getMazeCellClass(i)">
+                                    <i v-if="mazeStart === i" class="fa-solid fa-robot text-primary drop-shadow-[0_0_5px_rgba(59,130,246,0.8)] z-10 text-sm"></i>
+                                    <i v-if="mazeGoal === i" class="fa-solid fa-flag text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.8)] z-10 text-sm"></i>
+                                    <!-- Path dot -->
+                                    <div v-if="mazePath.includes(i) && mazeStart !== i && mazeGoal !== i" class="w-1.5 h-1.5 rounded-full bg-blue-400 opacity-60 z-0"></div>
+                                </div>
+                            </div>
+                            <p class="text-[9px] text-slate-400 mt-1 text-center leading-tight">Haz clic en casillas vacías para mover la META.<br>El agente recalculará la ruta óptima instantáneamente.</p>
+                        </div>
+
+                        <!-- UTILIDAD - TAXI -->
+                        <div v-else-if="currentAgentId === 'utility'" class="w-full h-full flex flex-col items-center justify-center p-1">
+                            
+                            <!-- Mapa Visual -->
+                            <div class="relative w-full flex-1 max-h-24 bg-green-900/30 rounded-lg border-2 border-dark-700 mb-2 overflow-hidden flex flex-col justify-between p-2">
+                                <div class="absolute left-2 top-1/2 -translate-y-1/2 text-primary font-bold">INICIO</div>
+                                <div class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 font-bold">META</div>
+                                
+                                <!-- Ruta 1 (Rápida/Cara) Arriba -->
+                                <div class="w-[70%] h-2 bg-slate-600 absolute top-4 left-[15%] rounded-full shadow-[0_0_5px_rgba(0,0,0,0.5)] transition-colors"
+                                     :class="selectedRoute.name === 'Principal' ? 'bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'opacity-30'">
+                                     <i class="fa-solid fa-taxi absolute -top-3 text-yellow-400 text-sm transition-all duration-700"
+                                        :class="selectedRoute.name === 'Principal' ? 'left-1/2 opacity-100' : 'left-0 opacity-0'"></i>
+                                </div>
+                                <div class="absolute top-1 left-1/2 -translate-x-1/2 text-[8px] text-slate-300">Ruta Principal (Rápida, Peaje alto)</div>
+                                
+                                <!-- Ruta 2 (Lenta/Barata) Abajo -->
+                                <div class="w-[70%] h-2 bg-slate-600 absolute bottom-4 left-[15%] rounded-full shadow-[0_0_5px_rgba(0,0,0,0.5)] transition-colors"
+                                     :class="selectedRoute.name === 'Escénica' ? 'bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'opacity-30'">
+                                     <i class="fa-solid fa-taxi absolute -top-3 text-yellow-400 text-sm transition-all duration-700"
+                                        :class="selectedRoute.name === 'Escénica' ? 'left-1/2 opacity-100' : 'left-0 opacity-0'"></i>
+                                </div>
+                                <div class="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] text-slate-300">Ruta Escénica (Lenta, Gratis)</div>
+                            </div>
+                            
+                            <!-- Controles -->
+                            <div class="w-full px-2 space-y-2 mt-auto">
+                                <div>
+                                    <div class="flex justify-between text-[10px] text-slate-400">
+                                        <span>Prioridad: Ahorro ($)</span>
+                                        <span class="text-white">{{ taxiCostWeight }}</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" v-model="taxiCostWeight" class="w-full accent-green-500 h-1.5 bg-dark-700 rounded appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[10px] text-slate-400">
+                                        <span>Prioridad: Tiempo (Rapidez)</span>
+                                        <span class="text-white">{{ taxiTimeWeight }}</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" v-model="taxiTimeWeight" class="w-full accent-blue-500 h-1.5 bg-dark-700 rounded appearance-none cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- APRENDIZAJE - PIEDRA PAPEL TIJERA -->
+                        <div v-else-if="currentAgentId === 'learning'" class="w-full h-full flex flex-col items-center justify-center p-2">
+                            <div class="w-full bg-dark-700/50 p-2 rounded-lg border border-dark-600 mb-2 shadow-inner">
+                                <div class="flex justify-between text-[10px] font-bold text-slate-300 px-2 mb-1">
+                                    <span>Agente (IA)</span>
+                                    <span>Victorias</span>
+                                    <span>Usuario</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-dark-800 rounded px-3 py-1">
+                                    <span class="text-lg text-primary">{{ rpsStats.wins }}</span>
+                                    <span class="text-xs text-slate-500">Empates: {{ rpsStats.ties }}</span>
+                                    <span class="text-lg text-green-400">{{ rpsStats.losses }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center min-h-[24px] flex items-center justify-center font-bold text-xs"
+                                 :class="rpsResultMsg.includes('Gané') ? 'text-primary' : (rpsResultMsg.includes('Perdí') ? 'text-green-400' : 'text-slate-400')">
+                                {{ rpsResultMsg || '¡Juega tu primer turno!' }}
+                            </div>
+                            
+                            <div class="flex gap-2 w-full mt-2">
+                                <button @click="playRPS('r')" class="flex-1 py-3 bg-dark-700 hover:bg-slate-600 text-white rounded-lg transition-colors border border-dark-600 hover:border-slate-400 shadow-md">
+                                    <i class="fa-solid fa-hand-back-fist text-xl"></i>
+                                </button>
+                                <button @click="playRPS('p')" class="flex-1 py-3 bg-dark-700 hover:bg-slate-600 text-white rounded-lg transition-colors border border-dark-600 hover:border-slate-400 shadow-md">
+                                    <i class="fa-solid fa-hand text-xl"></i>
+                                </button>
+                                <button @click="playRPS('s')" class="flex-1 py-3 bg-dark-700 hover:bg-slate-600 text-white rounded-lg transition-colors border border-dark-600 hover:border-slate-400 shadow-md">
+                                    <i class="fa-solid fa-hand-scissors text-xl"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="mt-auto text-[9px] text-slate-400 bg-dark-800/50 p-2 rounded border border-dark-700/50 text-center leading-tight w-full">
+                                <i class="fa-solid fa-brain text-accent"></i> Modelo de Markov: El agente memoriza qué juegas después de cada movimiento para predecir y contraatacar.
+                            </div>
+                        </div>
+
+                        <div v-else class="text-slate-500 text-center flex flex-col items-center justify-center h-full">
+                            <i class="fa-solid fa-person-digging text-3xl mb-2"></i>
+                            <p class="text-xs">Módulo en construcción</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 2 -->
+                <div class="flex-1 bg-dark-800 rounded-2xl border border-dark-700 flex flex-col shadow-xl overflow-hidden min-w-0">
+                    <div class="bg-dark-700/50 p-3 border-b border-dark-700 shrink-0 flex justify-between items-center">
+                        <h3 class="font-semibold text-sm text-slate-200"><i class="fa-solid fa-flask mr-2 text-accent"></i>{{ currentAgent.examples[1].title }}</h3>
+                        <span class="text-[10px] bg-dark-900 text-slate-400 px-2 py-1 rounded-md">Interactivo</span>
+                    </div>
+                    <div class="flex-1 relative overflow-hidden p-2 flex flex-col items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')]">
+                        
+                        <!-- REFLEJO SIMPLE - PUERTA -->
+                        <div v-if="currentAgentId === 'simple'" class="w-full h-full max-w-sm flex flex-col items-center justify-center select-none">
+                            <div class="relative w-full flex-1 max-h-32 border-b-4 border-slate-700 flex items-end justify-center overflow-hidden shrink-0">
+                                <!-- Paredes y Puerta -->
+                                <div class="absolute bottom-0 w-full h-24 flex justify-center z-0">
+                                    <div class="w-16 h-full bg-dark-700 border-r border-slate-600"></div>
+                                    
+                                    <!-- Puerta corrediza -->
+                                    <div class="relative w-24 h-full bg-slate-900 border-t border-slate-600 overflow-hidden flex justify-center">
+                                        <!-- Cristal Puerta Izquierda -->
+                                        <div class="absolute bottom-0 h-full w-[50%] bg-blue-900/30 border-r-2 border-slate-400 transition-all duration-300 shadow-[inset_0_0_15px_rgba(59,130,246,0.3)]"
+                                             :class="doorState === 'ABIERTA' ? 'left-[-40%]' : 'left-0'"></div>
+                                        <!-- Cristal Puerta Derecha -->
+                                        <div class="absolute bottom-0 h-full w-[50%] bg-blue-900/30 border-l-2 border-slate-400 transition-all duration-300 shadow-[inset_0_0_15px_rgba(59,130,246,0.3)]"
+                                             :class="doorState === 'ABIERTA' ? 'right-[-40%]' : 'right-0'"></div>
+                                    </div>
+                                    
+                                    <div class="w-16 h-full bg-dark-700 border-l border-slate-600"></div>
+                                </div>
+
+                                <!-- Sensor Area -->
+                                <div class="absolute bottom-0 w-36 h-12 rounded-t-full transition-colors duration-300 z-10"
+                                     :class="doorState === 'ABIERTA' ? 'bg-green-500/20 border-t-2 border-green-500/50' : 'bg-red-500/10 border-t-2 border-red-500/30'">
+                                     <div class="absolute top-1 left-1/2 -translate-x-1/2 text-[8px] text-slate-400 font-mono">SENSOR</div>
+                                </div>
+
+                                <!-- Personaje arrastrable -->
+                                <div class="absolute bottom-0 text-3xl cursor-grab active:cursor-grabbing transition-transform z-20"
+                                    :style="{ left: personPos + '%' }">
+                                    <i class="fa-solid fa-person text-slate-300"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="w-full mt-3 px-2">
+                                <label class="text-[10px] text-slate-400 block text-center mb-1">Mueve la persona:</label>
+                                <input type="range" min="10" max="80" v-model="personPos" @input="updateDoorSensor" class="w-full accent-accent h-1.5 bg-dark-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            
+                            <div class="mt-2 text-center">
+                                <div class="text-xs text-slate-400">Estado: <span class="font-bold" :class="doorState === 'ABIERTA' ? 'text-green-400' : 'text-red-400'">{{ doorState }}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- REFLEJO MODELO - RIEGO -->
+                        <div v-else-if="currentAgentId === 'model'" class="w-full h-full max-w-sm bg-dark-900 p-4 rounded-xl border border-dark-700 flex flex-col items-center justify-center">
+                            
+                            <!-- Terreno Visual -->
+                            <div class="relative w-full flex-1 max-h-24 min-h-[60px] rounded-lg border-2 mb-3 overflow-hidden transition-colors duration-700 shrink-0"
+                                 :class="soilMoisture < 40 ? 'border-amber-700/50 bg-amber-900/30' : 'border-green-700/50 bg-green-900/30'">
+                                <!-- Aspersor -->
+                                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-8 bg-slate-600 rounded-t-sm z-10 flex justify-center">
+                                    <div class="w-5 h-3 bg-slate-400 absolute top-0 rounded-sm"></div>
+                                </div>
+                                <!-- Agua animada -->
+                                <div v-if="sprinklerState === 'REGANDO'" class="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-16 border-t-2 border-l-2 border-r-2 border-blue-400/50 rounded-t-full opacity-60 animate-pulse"></div>
+                                <!-- Nubes (si llueve) -->
+                                <div v-if="rainPrediction" class="absolute top-1 left-1/2 -translate-x-1/2 w-16 h-5 bg-slate-400 rounded-full blur-md opacity-80"></div>
+                            </div>
+
+                            <div class="w-full space-y-3 mt-auto">
+                                <!-- Sensor de humedad actual -->
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-400">Sensor: Humedad</span>
+                                        <span class="font-bold text-slate-200">{{ soilMoisture }}%</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" v-model="soilMoisture" @input="updateIrrigation" class="w-full accent-primary h-1.5 bg-dark-700 rounded-lg appearance-none cursor-pointer">
+                                </div>
+
+                                <!-- Predicción interna del modelo -->
+                                <div class="bg-dark-800 p-2 rounded-lg border border-dark-700 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-cloud-bolt text-sm text-yellow-500"></i>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-medium text-slate-200">Modelo del Clima</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <button @click="rainPrediction = !rainPrediction" 
+                                            class="w-8 h-4 rounded-full p-0.5 transition-colors relative"
+                                            :class="rainPrediction ? 'bg-primary' : 'bg-dark-600'">
+                                        <div class="w-3 h-3 bg-white rounded-full transition-transform"
+                                             :class="rainPrediction ? 'translate-x-4' : 'translate-x-0'"></div>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-2 text-center text-xs text-slate-400 font-bold bg-dark-800 p-1.5 rounded-lg border border-dark-700 w-full">
+                                Estado: <span :class="sprinklerState === 'REGANDO' ? 'text-blue-400' : 'text-slate-500'">{{ sprinklerState }}</span>
+                            </div>
+                            
+                            <!-- Explicación del funcionamiento -->
+                            <div class="mt-2 text-[10px] text-slate-400 bg-dark-800/50 p-2 rounded border border-dark-700/50 text-center leading-tight">
+                                Baja la humedad a < 40% para regar. Si activas la lluvia, el riego se detendrá.
+                            </div>
+                        </div>
+
+                        <!-- METAS - PUZZLE -->
+                        <div v-else-if="currentAgentId === 'goal'" class="w-full h-full max-w-sm flex flex-col items-center justify-center p-2">
+                            <div class="grid grid-cols-3 gap-1 bg-dark-700 p-1 rounded-lg border border-dark-600 mb-3 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                                <div v-for="(num, i) in puzzleState" :key="i"
+                                     class="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center rounded-md font-bold text-lg transition-transform"
+                                     :class="num === 0 ? 'bg-dark-900 shadow-inner' : 'bg-slate-700 text-white shadow-md border-b-2 border-slate-900'">
+                                     {{ num === 0 ? '' : num }}
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2 mb-2 w-full px-2">
+                                <button @click="shufflePuzzle" :disabled="isSolvingPuzzle" class="flex-1 py-1.5 text-xs bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors disabled:opacity-50">
+                                    <i class="fa-solid fa-dice mr-1"></i> Desordenar
+                                </button>
+                                <button @click="solvePuzzle" :disabled="isSolvingPuzzle || isPuzzleSolved" class="flex-1 py-1.5 text-xs bg-accent hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50 font-semibold shadow-[0_0_10px_rgba(139,92,246,0.3)]">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Resolver
+                                </button>
+                            </div>
+                            
+                            <div class="mt-auto text-[9px] text-slate-400 bg-dark-800/50 p-2 rounded border border-dark-700/50 text-center leading-tight w-full">
+                                <span class="font-bold text-accent"><i class="fa-solid fa-bullseye"></i> Búsqueda de Meta:</span> Calcula la secuencia exacta de movimientos futuros requeridos para llegar al estado objetivo antes de actuar.
+                            </div>
+                        </div>
+
+                        <!-- UTILIDAD - RECOLECTOR -->
+                        <div v-else-if="currentAgentId === 'utility'" class="w-full h-full max-w-sm flex flex-col items-center justify-center p-1">
+                            <div class="grid grid-cols-5 gap-0.5 mb-1 bg-dark-700 border border-dark-600 p-0.5 rounded shadow-lg">
+                                <div v-for="(cell, i) in minerGrid" :key="i"
+                                     @click="spawnGem(i)"
+                                     class="w-7 h-7 lg:w-9 lg:h-9 bg-dark-900 border border-dark-800 flex items-center justify-center cursor-pointer relative hover:bg-dark-800 transition-colors">
+                                     <i v-if="minerPos === i" class="fa-solid fa-robot text-accent drop-shadow-[0_0_5px_rgba(139,92,246,0.8)] z-20 text-sm"></i>
+                                     
+                                     <div v-if="cell" class="flex flex-col items-center justify-center z-10" :class="getGemColor(cell.value)">
+                                        <i class="fa-solid fa-gem text-xs"></i>
+                                        <span class="text-[6px] font-bold">{{ cell.value }}</span>
+                                     </div>
+                                     
+                                     <!-- Etiqueta de utilidad calculada -->
+                                     <div v-if="cell && showUtilities" class="absolute -top-1 -right-1 bg-black/80 text-white text-[6px] px-0.5 rounded z-30 font-mono"
+                                          :class="getUtility(i, cell.value) === bestUtility ? 'text-green-400 border border-green-500' : ''">
+                                         U:{{ getUtility(i, cell.value) }}
+                                     </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2 w-full px-2 mb-1">
+                                <button @click="collectBestGem" class="flex-1 py-1 text-[10px] font-bold bg-accent hover:bg-purple-600 text-white rounded shadow transition-colors">
+                                    <i class="fa-solid fa-bolt mr-1"></i> Recolectar Mejor
+                                </button>
+                            </div>
+                            
+                            <div class="w-full px-2">
+                                <div class="flex justify-between text-[8px] text-slate-400 mb-0.5">
+                                    <span>Costo de Batería por Paso</span>
+                                    <span class="text-white font-bold">{{ batteryCost }} pts</span>
+                                </div>
+                                <input type="range" min="1" max="20" v-model="batteryCost" class="w-full accent-accent h-1 bg-dark-700 rounded appearance-none cursor-pointer">
+                            </div>
+                            
+                            <div class="mt-1 text-[8px] text-slate-400 bg-dark-800/50 p-1.5 rounded border border-dark-700/50 text-center leading-tight w-full">
+                                Haz clic en casillas para generar gemas (valor al azar). El robot calculará la <b>Utilidad (Valor de gema - Costo de viaje)</b> y elegirá la más rentable.
+                            </div>
+                        </div>
+
+                        <!-- APRENDIZAJE - BASURA -->
+                        <div v-else-if="currentAgentId === 'learning'" class="w-full h-full max-w-sm flex flex-col items-center justify-center p-2">
+                            <div class="relative w-full h-20 bg-slate-900 border-2 border-slate-700 rounded-lg flex items-center justify-center overflow-hidden mb-2 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]">
+                                <!-- Cinta transportadora -->
+                                <div class="absolute bottom-0 w-full h-3 bg-slate-800 border-t border-slate-600 flex items-center justify-around opacity-50">
+                                    <div class="w-2 h-2 rounded-full bg-slate-700" v-for="n in 10" :key="n"></div>
+                                </div>
+                                
+                                <div v-if="currentTrash" class="z-10 text-4xl drop-shadow-md animate-bounce" :class="currentTrash.class">
+                                    <i :class="'fa-solid ' + currentTrash.icon"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="w-full text-center bg-dark-800 border border-dark-700 rounded py-1 mb-2">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">El agente clasifica este objeto como:</span>
+                                <span class="text-sm font-bold uppercase tracking-widest" :class="agentTrashGuess === 'org' ? 'text-green-400' : 'text-blue-400'">
+                                    {{ agentTrashGuess === 'org' ? 'Orgánico' : 'Reciclable' }}
+                                </span>
+                            </div>
+                            
+                            <div class="flex gap-2 w-full px-2 mb-2">
+                                <button @click="trainTrash(true)" class="flex-1 py-1.5 text-xs font-bold bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-600 rounded-lg transition-colors shadow-[0_0_5px_rgba(22,163,74,0.3)]">
+                                    <i class="fa-solid fa-check mr-1"></i> Correcto
+                                </button>
+                                <button @click="trainTrash(false)" class="flex-1 py-1.5 text-xs font-bold bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600 rounded-lg transition-colors shadow-[0_0_5px_rgba(220,38,38,0.3)]">
+                                    <i class="fa-solid fa-xmark mr-1"></i> Error
+                                </button>
+                            </div>
+                            
+                            <div class="mt-auto text-[9px] text-slate-400 bg-dark-800/50 p-2 rounded border border-dark-700/50 text-center leading-tight w-full">
+                                Actúa como el <b>Crítico</b>. Si la IA falla, castígala (Error). Esto ajustará sus pesos internos para que la próxima vez acierte.
+                            </div>
+                        </div>
+
+                        <div v-else class="text-slate-500 text-center flex flex-col items-center justify-center h-full">
+                            <i class="fa-solid fa-person-digging text-3xl mb-2"></i>
+                            <p class="text-xs">Módulo en construcción</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inspection Panel / Logs (Bottom) -->
+            <div class="h-32 shrink-0 bg-black/60 border-t border-dark-700 flex flex-col">
+                <div class="flex justify-between items-center px-4 py-2 border-b border-dark-700/50 bg-dark-800/80">
+                    <span class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-terminal"></i> Agent Logs
+                    </span>
+                    <button @click="clearLogs" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                        <i class="fa-solid fa-eraser mr-1"></i> Limpiar
+                    </button>
+                </div>
+                <div class="flex-1 p-4 font-mono text-sm overflow-y-auto" id="log-container">
+                    <div v-if="logs.length === 0" class="text-slate-600 italic">Esperando eventos del agente...</div>
+                    <div v-for="(log, idx) in logs" :key="idx" class="mb-1 flex gap-3">
+                        <span class="text-slate-500 shrink-0">[{{ log.time }}]</span>
+                        <span :class="log.color">{{ log.message }}</span>
+                    </div>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+
+        const agentsData = {
+            'simple': {
+                name: 'Reflejo Simple',
+                icon: 'fa-solid fa-bolt',
+                description: 'Toma decisiones basándose únicamente en la percepción actual, ignorando el resto de la historia perceptiva. Utiliza reglas de condición-acción (if-then).',
+                examples: [
+                    { title: 'Termostato Inteligente' },
+                    { title: 'Puerta Automática' }
+                ]
+            },
+            'model': {
+                name: 'Reflejo Basado en Modelos',
+                icon: 'fa-solid fa-memory',
+                description: 'Mantiene un estado interno que depende de la historia perceptiva. Puede manejar observabilidad parcial porque el modelo rastrea la parte del mundo que no puede ver ahora.',
+                examples: [
+                    { title: 'Aspiradora Robot' },
+                    { title: 'Riego Agrícola' }
+                ]
+            },
+            'goal': {
+                name: 'Basado en Metas',
+                icon: 'fa-solid fa-flag-checkered',
+                description: 'Combina el estado actual con información de metas (resultados deseables). Busca secuencias de acciones (búsqueda/planificación) para alcanzar el objetivo.',
+                examples: [
+                    { title: 'Robot de Laberinto (A*)' },
+                    { title: 'Resolvedor de Puzzle' }
+                ]
+            },
+            'utility': {
+                name: 'Basado en Utilidad',
+                icon: 'fa-solid fa-chart-line',
+                description: 'Cuando hay múltiples maneras de lograr una meta (o metas conflictivas), el agente decide basándose en una función de utilidad que mide qué tan "feliz" o "eficiente" es el estado.',
+                examples: [
+                    { title: 'Taxi Autónomo' },
+                    { title: 'Robot Minero (Recursos)' }
+                ]
+            },
+            'learning': {
+                name: 'Agente que Aprende',
+                icon: 'fa-solid fa-brain',
+                description: 'Mejora su desempeño futuro a través de la experiencia. Tiene un "elemento de aprendizaje" que modifica el comportamiento y un "crítico" que evalúa cómo lo está haciendo.',
+                examples: [
+                    { title: 'Piedra, Papel, Tijera' },
+                    { title: 'Clasificador de Basura' }
+                ]
+            }
+        };
+
+        createApp({
+            setup() {
+                const currentAgentId = ref('simple');
+                const currentExampleTab = ref(0);
+                
+                const currentAgent = computed(() => agentsData[currentAgentId.value]);
+
+                // --- LOG SYSTEM ---
+                const logs = ref([]);
+                
+                const addLog = (message, type = 'info') => {
+                    const now = new Date();
+                    const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+                    
+                    let color = 'text-slate-300';
+                    if (type === 'action') color = 'text-green-400 font-semibold';
+                    if (type === 'warn') color = 'text-yellow-400';
+                    if (type === 'error') color = 'text-red-400';
+                    if (type === 'sensor') color = 'text-blue-300';
+
+                    logs.value.push({ time, message, color });
+                    if(logs.value.length > 50) logs.value.shift();
+                    
+                    // Auto-scroll logs
+                    nextTick(() => {
+                        const container = document.getElementById('log-container');
+                        if(container) container.scrollTop = container.scrollHeight;
+                    });
+                };
+
+                const clearLogs = () => {
+                    logs.value = [];
+                };
+
+                // --- AGENT 1: TERMOSTATO (SIMPLE REFLEX) ---
+                const thermostatTemp = ref(22);
+                const thermostatState = ref('APAGADO');
+                
+                const thermostatColor = computed(() => {
+                    if (thermostatState.value === 'CALEFACCIÓN (ON)') return 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]';
+                    if (thermostatState.value === 'AIRE ACONDICIONADO (ON)') return 'text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]';
+                    return 'text-slate-500';
+                });
+
+                const thermostatIcon = computed(() => {
+                    if (thermostatState.value === 'CALEFACCIÓN (ON)') return 'fa-solid fa-fire';
+                    if (thermostatState.value === 'AIRE ACONDICIONADO (ON)') return 'fa-solid fa-snowflake';
+                    return 'fa-solid fa-power-off';
+                });
+
+                let lastTemp = 22;
+                const updateThermostat = () => {
+                    const t = thermostatTemp.value;
+                    
+                    // Solo loguear si hubo un cambio significativo (simulando sensor)
+                    if (Math.abs(t - lastTemp) >= 1) {
+                        addLog(`Sensor de temperatura lee: ${t}°C`, 'sensor');
+                        lastTemp = t;
+                    }
+
+                    // Reglas de condición-acción
+                    if (t < 18 && thermostatState.value !== 'CALEFACCIÓN (ON)') {
+                        thermostatState.value = 'CALEFACCIÓN (ON)';
+                        addLog(`REGLA: Temperatura < 18°C. Acción: Encender CALEFACCIÓN.`, 'action');
+                    } else if (t > 25 && thermostatState.value !== 'AIRE ACONDICIONADO (ON)') {
+                        thermostatState.value = 'AIRE ACONDICIONADO (ON)';
+                        addLog(`REGLA: Temperatura > 25°C. Acción: Encender AIRE ACONDICIONADO.`, 'action');
+                    } else if (t >= 18 && t <= 25 && thermostatState.value !== 'APAGADO') {
+                        thermostatState.value = 'APAGADO';
+                        addLog(`REGLA: Temperatura en rango (18-25°C). Acción: APAGAR.`, 'action');
+                    }
+                };
+
+                // Initial setup log
+                onMounted(() => {
+                    addLog('Sistema inicializado. Taxonomía de agentes cargada.', 'info');
+                });
+
+                // Watchers para registrar navegación
+                watch(currentAgentId, (newId) => {
+                    addLog(`--- Cambiando al agente: ${agentsData[newId].name} ---`, 'warn');
+                    if (newId === 'model') resetVacuum();
+                });
+
+                // --- AGENT 1 (EJEMPLO 2): PUERTA AUTOMÁTICA ---
+                const personPos = ref(20);
+                const doorState = ref('CERRADA');
+                
+                const updateDoorSensor = () => {
+                    const pos = personPos.value;
+                    // El sensor abarca el rango 35% - 55%
+                    const inSensorZone = pos >= 35 && pos <= 55;
+                    
+                    if (inSensorZone && doorState.value === 'CERRADA') {
+                        doorState.value = 'ABIERTA';
+                        addLog(`Sensor de Proximidad: MOVIMIENTO DETECTADO. Acción: ABRIR PUERTA.`, 'action');
+                    } else if (!inSensorZone && doorState.value === 'ABIERTA') {
+                        doorState.value = 'CERRADA';
+                        addLog(`Sensor de Proximidad: DESPEJADO. Acción: CERRAR PUERTA.`, 'action');
+                    }
+                };
+
+                // --- AGENT 2 (EJEMPLO 1): ASPIRADORA ROBOT CON MEMORIA ---
+                const vacuumGrid = ref(Array(16).fill().map(() => ({ isDirty: false })));
+                const vacuumPos = ref(0);
+                const vacuumMemory = ref([]); // Guarda las celdas ya limpiadas/visitadas
+                let vacuumInterval = null;
+
+                const dirtyTile = (index) => {
+                    vacuumGrid.value[index].isDirty = !vacuumGrid.value[index].isDirty;
+                    if(vacuumGrid.value[index].isDirty) {
+                        addLog(`Usuario ensució la baldosa [${index}].`, 'sensor');
+                    }
+                };
+
+                const resetVacuum = () => {
+                    clearInterval(vacuumInterval);
+                    vacuumInterval = null;
+                    vacuumPos.value = 0;
+                    vacuumMemory.value = [];
+                    vacuumGrid.value = Array(16).fill().map(() => ({ isDirty: false }));
+                    addLog('Sistema de Aspiradora reiniciado. Memoria borrada.', 'warn');
+                };
+
+                const startVacuum = () => {
+                    if (vacuumInterval) return;
+                    addLog('Iniciando ciclo de limpieza...', 'info');
+                    
+                    vacuumInterval = setInterval(() => {
+                        const current = vacuumPos.value;
+                        
+                        // Percepción actual
+                        if (vacuumGrid.value[current].isDirty) {
+                            addLog(`Percepción: Baldosa [${current}] SUCIA. Acción: LIMPIAR.`, 'action');
+                            vacuumGrid.value[current].isDirty = false;
+                            
+                            // Actualizar estado interno (memoria)
+                            if (!vacuumMemory.value.includes(current)) {
+                                vacuumMemory.value.push(current);
+                            }
+                            return; // Gasta un turno limpiando
+                        }
+
+                        // Agrega actual a memoria si no estaba
+                        if (!vacuumMemory.value.includes(current)) {
+                            vacuumMemory.value.push(current);
+                        }
+                        
+                        // Decidir movimiento basándose en MEMORIA y PERCEPCIÓN
+                        // Prioriza celdas adyacentes sucias, si no hay, celdas no visitadas en memoria.
+                        const adjacents = [];
+                        if (current >= 4) adjacents.push(current - 4); // Arriba
+                        if (current < 12) adjacents.push(current + 4); // Abajo
+                        if (current % 4 !== 0) adjacents.push(current - 1); // Izquierda
+                        if ((current + 1) % 4 !== 0) adjacents.push(current + 1); // Derecha
+                        
+                        // Hay alguna sucia a la vista? (asumiendo que tiene sensor adyacente simple)
+                        const dirtyAdj = adjacents.find(a => vacuumGrid.value[a].isDirty);
+                        if (dirtyAdj !== undefined) {
+                            addLog(`Memoria/Sensor: Basura en [${dirtyAdj}]. Acción: MOVER.`, 'action');
+                            vacuumPos.value = dirtyAdj;
+                            return;
+                        }
+                        
+                        // Si no, moverse a un lugar no visitado según memoria
+                        const unvisited = adjacents.filter(a => !vacuumMemory.value.includes(a));
+                        if (unvisited.length > 0) {
+                            const next = unvisited[Math.floor(Math.random() * unvisited.length)];
+                            addLog(`Memoria interna: [${next}] no explorado. Acción: MOVER.`, 'info');
+                            vacuumPos.value = next;
+                            return;
+                        }
+                        
+                        // Si todo adyacente fue visitado, movimiento aleatorio para no quedarse trabado
+                        const randomNext = adjacents[Math.floor(Math.random() * adjacents.length)];
+                        addLog(`Memoria: Todo adyacente explorado. Movimiento exploratorio a [${randomNext}].`, 'sensor');
+                        vacuumPos.value = randomNext;
+
+                        // Si limpió toda la grilla... (simplificado)
+                        if (vacuumGrid.value.every(t => !t.isDirty) && vacuumMemory.value.length === 16) {
+                            addLog(`Meta/Modelo: Toda la habitación limpia y explorada.`, 'warn');
+                            clearInterval(vacuumInterval);
+                            vacuumInterval = null;
+                        }
+                        
+                    }, 1200);
+                };
+
+                // --- AGENT 2 (EJEMPLO 2): RIEGO AGRÍCOLA ---
+                const soilMoisture = ref(30); 
+                const rainPrediction = ref(false);
+                const sprinklerState = ref('APAGADO');
+                
+                const updateIrrigation = () => {
+                    const dry = soilMoisture.value < 40;
+                    
+                    if (dry && !rainPrediction.value && sprinklerState.value === 'APAGADO') {
+                        sprinklerState.value = 'REGANDO';
+                        addLog(`Humedad baja (${soilMoisture.value}%) + Sin Lluvia. Acción: ENCENDER RIEGO.`, 'action');
+                    } else if (dry && rainPrediction.value && sprinklerState.value === 'REGANDO') {
+                        sprinklerState.value = 'APAGADO';
+                        addLog(`Humedad baja pero PRONÓSTICO DE LLUVIA. Acción: APAGAR RIEGO.`, 'warn');
+                    } else if (dry && rainPrediction.value && sprinklerState.value === 'APAGADO') {
+                        addLog(`Humedad baja (${soilMoisture.value}%), pero el modelo predice LLUVIA. Reteniendo riego.`, 'info');
+                    } else if (!dry && sprinklerState.value === 'REGANDO') {
+                        sprinklerState.value = 'APAGADO';
+                        addLog(`Humedad óptima (${soilMoisture.value}%). Acción: APAGAR RIEGO.`, 'action');
+                    }
+                };
+
+                // Observar cambios en la predicción del clima para actualizar el riego en tiempo real
+                watch(rainPrediction, (newVal) => {
+                    if (newVal) {
+                        addLog('Modelo Meteorológico actualizado: PRONÓSTICO DE LLUVIA detectado.', 'sensor');
+                    } else {
+                        addLog('Modelo Meteorológico actualizado: DÍA SOLEADO pronosticado.', 'sensor');
+                    }
+                    updateIrrigation();
+                });
+
+                // --- AGENT 3 (EJEMPLO 1): LABERINTO (PATHFINDING BFS) ---
+                // 5x5 Grid. 0 = Vacio, 1 = Pared
+                const mazeLayout = [
+                    0, 0, 1, 0, 0,
+                    0, 1, 1, 0, 0,
+                    0, 0, 0, 0, 1,
+                    1, 1, 0, 1, 1,
+                    0, 0, 0, 0, 0
+                ];
+                const mazeGrid = ref(mazeLayout);
+                const mazeStart = ref(0);
+                const mazeGoal = ref(24);
+                const mazePath = ref([]);
+
+                const getMazeCellClass = (i) => {
+                    if (mazeGrid.value[i] === 1) return 'bg-slate-700 border border-slate-800'; // Pared
+                    if (mazePath.value.includes(i) && mazeStart.value !== i && mazeGoal.value !== i) return 'bg-dark-800 border border-dark-700'; // Camino
+                    return 'bg-dark-900 border border-dark-800 cursor-pointer hover:bg-dark-800'; // Vacio
+                };
+
+                const calculateMazePath = () => {
+                    // BFS para encontrar el camino más corto
+                    const start = mazeStart.value;
+                    const goal = mazeGoal.value;
+                    const queue = [[start]];
+                    const visited = new Set([start]);
+                    
+                    while (queue.length > 0) {
+                        const path = queue.shift();
+                        const current = path[path.length - 1];
+                        
+                        if (current === goal) {
+                            mazePath.value = path;
+                            addLog(`Agente Laberinto: Ruta calculada. Distancia: ${path.length - 1} pasos.`, 'action');
+                            return;
+                        }
+                        
+                        // Adyacentes (Arriba, Abajo, Izq, Der) en grid 5x5
+                        const adjacents = [];
+                        if (current >= 5) adjacents.push(current - 5);
+                        if (current < 20) adjacents.push(current + 5);
+                        if (current % 5 !== 0) adjacents.push(current - 1);
+                        if ((current + 1) % 5 !== 0) adjacents.push(current + 1);
+                        
+                        for (const next of adjacents) {
+                            if (mazeGrid.value[next] === 0 && !visited.has(next)) {
+                                visited.add(next);
+                                queue.push([...path, next]);
+                            }
+                        }
+                    }
+                    mazePath.value = [];
+                    addLog(`Agente Laberinto: ERROR. Meta inalcanzable.`, 'error');
+                };
+
+                const moveMazeGoal = (i) => {
+                    if (mazeGrid.value[i] === 1 || mazeStart.value === i) return;
+                    mazeGoal.value = i;
+                    addLog(`Nueva Meta establecida en [${i}]. Recalculando...`, 'sensor');
+                    calculateMazePath();
+                };
+
+                // Calcular ruta inicial
+                calculateMazePath();
+
+
+                // --- AGENT 3 (EJEMPLO 2): ROMPECABEZAS (BFS) ---
+                const targetPuzzle = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+                const puzzleState = ref([...targetPuzzle]);
+                const isSolvingPuzzle = ref(false);
+                
+                const isPuzzleSolved = computed(() => {
+                    return puzzleState.value.every((val, index) => val === targetPuzzle[index]);
+                });
+
+                const getPuzzleMoves = (state) => {
+                    const emptyIdx = state.indexOf(0);
+                    const moves = [];
+                    // Adyacentes en grid 3x3
+                    if (emptyIdx >= 3) moves.push(emptyIdx - 3); // Arriba
+                    if (emptyIdx < 6) moves.push(emptyIdx + 3);  // Abajo
+                    if (emptyIdx % 3 !== 0) moves.push(emptyIdx - 1); // Izq
+                    if ((emptyIdx + 1) % 3 !== 0) moves.push(emptyIdx + 1); // Der
+                    
+                    return moves.map(targetIdx => {
+                        const newState = [...state];
+                        [newState[emptyIdx], newState[targetIdx]] = [newState[targetIdx], newState[emptyIdx]];
+                        return newState;
+                    });
+                };
+
+                const shufflePuzzle = () => {
+                    // Hacer ~15 movimientos aleatorios válidos para no complicarlo demasiado
+                    addLog('Rompecabezas: Desordenando estado inicial.', 'warn');
+                    let current = [...targetPuzzle];
+                    let prevEmpty = -1;
+                    for(let i=0; i<15; i++) {
+                        const emptyIdx = current.indexOf(0);
+                        const moves = getPuzzleMoves(current);
+                        // Filtrar el movimiento inverso para no deshacer
+                        const validMoves = moves.filter(m => m.indexOf(0) !== prevEmpty);
+                        if(validMoves.length > 0) {
+                            current = validMoves[Math.floor(Math.random() * validMoves.length)];
+                            prevEmpty = emptyIdx;
+                        }
+                    }
+                    puzzleState.value = current;
+                };
+
+                const solvePuzzle = () => {
+                    if (isSolvingPuzzle.value || isPuzzleSolved.value) return;
+                    isSolvingPuzzle.value = true;
+                    addLog('Rompecabezas: Iniciando Búsqueda BFS para encontrar solución óptima...', 'info');
+                    
+                    // BFS Simplificado (cuidado con profundidad excesiva en frontend)
+                    const queue = [{ state: puzzleState.value, path: [] }];
+                    const visited = new Set([puzzleState.value.join('')]);
+                    let solutionPath = null;
+                    
+                    // Límite de seguridad
+                    let iter = 0;
+                    while (queue.length > 0 && iter < 10000) {
+                        iter++;
+                        const current = queue.shift();
+                        
+                        if (current.state.every((val, i) => val === targetPuzzle[i])) {
+                            solutionPath = current.path;
+                            break;
+                        }
+                        
+                        const nextStates = getPuzzleMoves(current.state);
+                        for (const next of nextStates) {
+                            const key = next.join('');
+                            if (!visited.has(key)) {
+                                visited.add(key);
+                                queue.push({ state: next, path: [...current.path, next] });
+                            }
+                        }
+                    }
+
+                    if (solutionPath) {
+                        addLog(`Solución encontrada. Profundidad: ${solutionPath.length} pasos. Ejecutando acciones...`, 'action');
+                        // Animar la solución
+                        let step = 0;
+                        const interval = setInterval(() => {
+                            if (step < solutionPath.length) {
+                                puzzleState.value = solutionPath[step];
+                                step++;
+                            } else {
+                                clearInterval(interval);
+                                isSolvingPuzzle.value = false;
+                                addLog(`Meta alcanzada. Rompecabezas resuelto.`, 'warn');
+                            }
+                        }, 500);
+                    } else {
+                        addLog(`Error: Solución no encontrada dentro del límite de búsqueda.`, 'error');
+                        isSolvingPuzzle.value = false;
+                    }
+                };
+
+                // --- AGENT 4 (EJEMPLO 1): TAXI AUTÓNOMO (UTILIDAD) ---
+                const taxiTimeWeight = ref(50);
+                const taxiCostWeight = ref(50);
+                // Ruta 1: Principal (Rápida pero cara)
+                const route1 = { time: 10, cost: 50, name: 'Principal' };
+                // Ruta 2: Escénica (Lenta pero barata)
+                const route2 = { time: 40, cost: 10, name: 'Escénica' };
+                
+                const selectedRoute = computed(() => {
+                    const u1 = - (route1.time * taxiTimeWeight.value) - (route1.cost * taxiCostWeight.value);
+                    const u2 = - (route2.time * taxiTimeWeight.value) - (route2.cost * taxiCostWeight.value);
+                    return u1 >= u2 ? route1 : route2;
+                });
+                
+                watch([taxiTimeWeight, taxiCostWeight], () => {
+                    addLog(`Taxi: Maximizando utilidad. Pesos -> Tiempo: ${taxiTimeWeight.value}, Costo: ${taxiCostWeight.value}`, 'sensor');
+                    addLog(`Mejor ruta elegida: ${selectedRoute.value.name}`, 'action');
+                });
+
+
+                // --- AGENT 4 (EJEMPLO 2): MINERO (UTILIDAD) ---
+                const minerGrid = ref(Array(25).fill(null));
+                const minerPos = ref(12); // Centro (5x5)
+                const batteryCost = ref(10);
+                const showUtilities = ref(true);
+                const bestUtility = ref(-Infinity);
+
+                const getGemColor = (val) => {
+                    if(val >= 100) return 'text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]'; // Oro
+                    if(val >= 50) return 'text-slate-300 drop-shadow-[0_0_3px_rgba(203,213,225,0.8)]'; // Plata
+                    return 'text-amber-700'; // Bronce
+                };
+
+                const spawnGem = (i) => {
+                    if(i !== minerPos.value && !minerGrid.value[i]) {
+                        const vals = [20, 50, 100];
+                        const val = vals[Math.floor(Math.random() * vals.length)];
+                        minerGrid.value[i] = { value: val };
+                        updateUtilities();
+                        addLog(`Minero: Gema de ${val}pts detectada en celda [${i}].`, 'sensor');
+                    }
+                };
+
+                const manhattanDist = (a, b) => {
+                    const ax = a % 5, ay = Math.floor(a / 5);
+                    const bx = b % 5, by = Math.floor(b / 5);
+                    return Math.abs(ax - bx) + Math.abs(ay - by);
+                };
+
+                const getUtility = (targetIdx, gemValue) => {
+                    const dist = manhattanDist(minerPos.value, targetIdx);
+                    // Utilidad = Beneficio - (Distancia * CostoBatería)
+                    return gemValue - (dist * batteryCost.value);
+                };
+
+                const updateUtilities = () => {
+                    let maxU = -Infinity;
+                    minerGrid.value.forEach((cell, idx) => {
+                        if(cell) {
+                            const u = getUtility(idx, cell.value);
+                            if(u > maxU) maxU = u;
+                        }
+                    });
+                    bestUtility.value = maxU;
+                };
+
+                watch(batteryCost, () => {
+                    updateUtilities();
+                    addLog(`Minero: Costo de batería actualizado a ${batteryCost.value}. Utilidades recalculadas.`, 'info');
+                });
+
+                const collectBestGem = () => {
+                    let bestIdx = -1;
+                    let maxU = -Infinity;
+                    
+                    minerGrid.value.forEach((cell, idx) => {
+                        if(cell) {
+                            const u = getUtility(idx, cell.value);
+                            if(u > maxU) {
+                                maxU = u;
+                                bestIdx = idx;
+                            }
+                        }
+                    });
+
+                    if(bestIdx !== -1) {
+                        const gem = minerGrid.value[bestIdx];
+                        const dist = manhattanDist(minerPos.value, bestIdx);
+                        const cost = dist * batteryCost.value;
+                        
+                        addLog(`Minero: Gema elegida en [${bestIdx}]. Beneficio: ${gem.value}, Costo Viaje: ${cost}. Utilidad Neta: ${maxU}.`, 'action');
+                        
+                        // Mover el robot
+                        minerPos.value = bestIdx;
+                        minerGrid.value[bestIdx] = null;
+                        updateUtilities();
+                    } else {
+                        addLog(`Minero: No hay gemas en el mapa.`, 'warn');
+                    }
+                };
+
+                // --- AGENT 5 (EJEMPLO 1): PIEDRA PAPEL TIJERA (LEARNING) ---
+                const rpsStats = ref({ wins: 0, losses: 0, ties: 0 });
+                // Matriz de transición: P(next | previous)
+                const rpsModel = { 
+                    'r': { 'r':0, 'p':0, 's':0 },
+                    'p': { 'r':0, 'p':0, 's':0 },
+                    's': { 'r':0, 'p':0, 's':0 }
+                };
+                let lastUserMove = null;
+                const rpsResultMsg = ref('');
+
+                const playRPS = (userMove) => {
+                    // 1. Predecir
+                    let agentPrediction = 'r';
+                    if (lastUserMove) {
+                        const probs = rpsModel[lastUserMove];
+                        if (probs.r >= probs.p && probs.r >= probs.s) agentPrediction = 'r';
+                        else if (probs.p >= probs.r && probs.p >= probs.s) agentPrediction = 'p';
+                        else agentPrediction = 's';
+                    } else {
+                        const moves = ['r', 'p', 's'];
+                        agentPrediction = moves[Math.floor(Math.random()*3)];
+                    }
+                    
+                    // 2. Contraataque a la predicción
+                    let agentMove = 'p';
+                    if (agentPrediction === 'r') agentMove = 'p';
+                    else if (agentPrediction === 'p') agentMove = 's';
+                    else if (agentPrediction === 's') agentMove = 'r';
+                    
+                    // 3. Actualizar modelo (Aprendizaje empírico)
+                    if (lastUserMove) {
+                        rpsModel[lastUserMove][userMove]++;
+                    }
+                    lastUserMove = userMove;
+                    
+                    // 4. Resolver
+                    let result = '';
+                    if (userMove === agentMove) { result = 'tie'; rpsStats.value.ties++; }
+                    else if (
+                        (userMove==='r' && agentMove==='s') ||
+                        (userMove==='p' && agentMove==='r') ||
+                        (userMove==='s' && agentMove==='p')
+                    ) { result = 'user'; rpsStats.value.losses++; }
+                    else { result = 'agent'; rpsStats.value.wins++; }
+                    
+                    const moveNames = { 'r': 'Piedra', 'p':'Papel', 's':'Tijera' };
+                    const rLabel = result === 'tie' ? 'Empate' : (result === 'user' ? 'Perdiste' : '¡Gané!');
+                    rpsResultMsg.value = `Tú: ${moveNames[userMove]} | IA: ${moveNames[agentMove]} -> ${rLabel}`;
+                    
+                    addLog(`Juego: Usuario=${moveNames[userMove]}, IA=${moveNames[agentMove]}. Predije que tirarías ${moveNames[agentPrediction]}. Resultado: ${rLabel}`, result === 'agent' ? 'action' : (result==='user'?'error':'warn'));
+                };
+
+                // --- AGENT 5 (EJEMPLO 2): CLASIFICADOR BASURA (LEARNING) ---
+                const trashItems = [
+                    { id: 1, name: 'Manzana', type: 'org', icon: 'fa-apple-whole', class: 'text-red-400' },
+                    { id: 2, name: 'Botella Plástico', type: 'rec', icon: 'fa-bottle-water', class: 'text-blue-400' },
+                    { id: 3, name: 'Hoja Seca', type: 'org', icon: 'fa-leaf', class: 'text-green-500' },
+                    { id: 4, name: 'Caja Cartón', type: 'rec', icon: 'fa-box', class: 'text-yellow-600' }
+                ];
+
+                // Pesos: < 0 (Orgánico), > 0 (Reciclable), 0 (Duda)
+                const trashModelWeights = ref({ 1: 0, 2: 0, 3: 0, 4: 0 });
+                const currentTrash = ref(null);
+                const agentTrashGuess = ref('org');
+
+                const nextTrash = () => {
+                    currentTrash.value = trashItems[Math.floor(Math.random() * trashItems.length)];
+                    const weight = trashModelWeights.value[currentTrash.value.id];
+                    if (weight > 0) agentTrashGuess.value = 'rec';
+                    else if (weight < 0) agentTrashGuess.value = 'org';
+                    else agentTrashGuess.value = Math.random() > 0.5 ? 'rec' : 'org';
+                    
+                    addLog(`Sensores: Objeto ${currentTrash.value.name} detectado. La red neuronal lo clasifica como: ${agentTrashGuess.value === 'org' ? 'Orgánico' : 'Reciclable'}.`, 'sensor');
+                };
+
+                const trainTrash = (isCorrect) => {
+                    if(!currentTrash.value) return;
+                    
+                    if (isCorrect) {
+                        addLog(`Crítico: ¡Acierto! Recompensa recibida. Reforzando conexión sináptica.`, 'action');
+                        if (agentTrashGuess.value === 'rec') trashModelWeights.value[currentTrash.value.id]++;
+                        else trashModelWeights.value[currentTrash.value.id]--;
+                    } else {
+                        addLog(`Crítico: ¡Error! Penalización recibida. Ajustando pesos (Backpropagation simplificado).`, 'error');
+                        if (agentTrashGuess.value === 'rec') trashModelWeights.value[currentTrash.value.id] -= 2;
+                        else trashModelWeights.value[currentTrash.value.id] += 2;
+                    }
+                    setTimeout(nextTrash, 400);
+                };
+
+                onMounted(() => {
+                    nextTrash();
+                });
+
+                return {
+                    agentsData,
+                    currentAgentId,
+                    currentAgent,
+                    currentExampleTab,
+                    logs,
+                    clearLogs,
+                    
+                    // Termostato
+                    thermostatTemp,
+                    thermostatState,
+                    thermostatColor,
+                    thermostatIcon,
+                    updateThermostat,
+
+                    // Puerta
+                    personPos,
+                    doorState,
+                    updateDoorSensor,
+
+                    // Aspiradora
+                    vacuumGrid,
+                    vacuumPos,
+                    vacuumMemory,
+                    dirtyTile,
+                    resetVacuum,
+                    startVacuum,
+
+                    // Riego
+                    soilMoisture,
+                    rainPrediction,
+                    sprinklerState,
+                    updateIrrigation,
+                    
+                    // Laberinto
+                    mazeGrid,
+                    mazeStart,
+                    mazeGoal,
+                    mazePath,
+                    getMazeCellClass,
+                    moveMazeGoal,
+                    
+                    // Puzzle
+                    puzzleState,
+                    isSolvingPuzzle,
+                    isPuzzleSolved,
+                    shufflePuzzle,
+                    solvePuzzle,
+
+                    // Utilidad Taxi
+                    taxiTimeWeight,
+                    taxiCostWeight,
+                    selectedRoute,
+                    
+                    // Utilidad Minero
+                    minerGrid,
+                    minerPos,
+                    batteryCost,
+                    showUtilities,
+                    bestUtility,
+                    spawnGem,
+                    getGemColor,
+                    getUtility,
+                    collectBestGem,
+                    
+                    // Learning RPS
+                    rpsStats,
+                    rpsResultMsg,
+                    playRPS,
+                    
+                    // Learning Basura
+                    currentTrash,
+                    agentTrashGuess,
+                    trainTrash
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
